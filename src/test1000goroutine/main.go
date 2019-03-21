@@ -1,10 +1,9 @@
-package src
+package main
 
 import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"runtime"
-	"testing"
 	"time"
 )
 
@@ -12,7 +11,7 @@ func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
 }
 
-func TestGorouine(t *testing.T) {
+func main() {
 	ticker := time.NewTicker(1 * time.Second)
 	var m runtime.MemStats
 
@@ -26,13 +25,19 @@ func TestGorouine(t *testing.T) {
 	count := 1000
 	for i := 0; i < count; i ++ {
 		//logrus.Infof("start %d/%d", i+1, count)
-		go func() {
+		c := make(chan struct{})
+		go func(testC chan struct{}) {
+			defer close(c)
+
 			for k := 0; k < 10000; k ++ {
 				time.Sleep(100 * time.Millisecond)
 			}
+
+			c <- struct{}{}
+
 			http.Get("http://127.0.0.1")
 			time.Sleep(1000 * time.Second)
-		}()
+		}(c)
 	}
 
 	logrus.Println("test normal")
